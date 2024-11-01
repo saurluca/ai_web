@@ -11,7 +11,7 @@ client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # Set a default model
 if "openai_model" not in st.session_state:
-    st.session_state["openai_model"] = "gpt-3.5-turbo"
+    st.session_state["openai_model"] = "gpt-4o-mini"
 
 system_prompt = {"role": "system", "content": "You are a riddle master. Your job is to ask the user a riddle based on the provided difficulty. The user will try to guess the answer. Use a new line for each line of the riddle. Rememeber the different answers by the user and rate each answer on a sacle from 1 to 10 on how good of a guess they were. Also after finishing the riddle tell the user how many attemtps they took to guess the right answer. "}
 
