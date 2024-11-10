@@ -2,7 +2,9 @@ from random import randint
 import streamlit as st
 from openai import OpenAI
 
-# TODO Can interact with a before new riddle is started, thus not sytem prompt
+# TODO Can interact with a before new riddle is started, thus not system prompt + remove input if game ends
+# TODO If stats page loaded first, session state is not loaded, so error
+# TODO add lives? max tries?
 
 # Setup part
 
@@ -12,9 +14,9 @@ st.set_page_config(initial_sidebar_state="collapsed")
 # Set OpenAI API key from Streamlit secrets
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-if "openai_model" not in st.session_state:
-    st.session_state["openai_model"] = "gpt-4o-mini"
+# Initialize session states to persist across reloads
 
+# saves all messages, from user and assistant
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -27,6 +29,11 @@ if "games_played" not in st.session_state:
 if "riddles_solved" not in st.session_state:
     st.session_state.riddles_solved = 0
 
+# saves the number of tries per riddle in a list
+if "tries_per_riddle" not in st.session_state:
+    st.session_state.tries_per_riddle = []
+
+# list of riddles to choose from, contains riddles of different difficulty with answers
 if "riddles" not in st.session_state:
     st.session_state.riddles = {
         "Easy": [
@@ -70,31 +77,37 @@ if "riddles" not in st.session_state:
 
 
 def restart():
-    print("restart")
-    st.session_state.solved = False
     random_number = randint(0, 9)
     print("random number", random_number, add_selectbox)
+    # choose a riddle from the list of riddles, based on the difficulty level and the random number
     riddle = st.session_state.riddles[add_selectbox][random_number]
 
+    # system prompt to be sent to the AI, to tell it what to do
     system_prompt = {"role": "system", "content": f"You are a master of riddles. Ask the user the following riddle. The riddle: {riddle["riddle"]}, "
                                                   f"The answer: {riddle["answer"]}. Do not repeat the riddleThe user has to guess the answer. If the"
                                                   f" user guesses the riddle correctly, respond with message containing 'congratiolations'. The message"
                                                   f" correctly, respond with message containing 'Congratulations'. The message should also contain a"
                                                   f"section that start with 'Stats:' then 'number of tries: <num>'."}
 
+    # add the system prompt to the list of messages, so it is sent to the AI
     st.session_state.messages = [system_prompt]
 
+    # TODO does this work?
     # Get initial response
+    # noinspection PyTypeChecker
     response = client.chat.completions.create(
-        model=st.session_state["openai_model"],
+        model="gpt-4o-mini",
         messages=[
             {"role": m["role"], "content": m["content"]}
             for m in st.session_state.messages
         ],
         stream=False,
     )
+    # save response to assistant messages
     response_message = response.choices[0].message.content
     st.session_state.messages.append({"role": "assistant", "content": response_message})
+
+    # increment games played every timeme a new riddle is started
     st.session_state.games_played += 1
 
 
@@ -102,27 +115,32 @@ def restart():
 
 st.title("The Riddle game")
 
+# select box to choose difficulty level
 add_selectbox = st.selectbox(
     "Choose a difficulty level",
     ('Easy', 'Medium', 'Hard')
 )
 
+# button to start a new riddle
 if st.button("New Riddle"):
     restart()
 
+# display all messages from the list of messages, except the first one, which is the system prompt
 for message in st.session_state.messages[1:]:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
 # Display a chat input widget inline.
-if prompt := st.chat_input("Say something ..."):
+if prompt := st.chat_input("Make a guess ..."):
     with st.chat_message("user"):
         st.markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
+    # send response to assistant and stream the incoming response to the user
     with st.chat_message("assistant"):
+        # noinspection PyTypeChecker
         stream = client.chat.completions.create(
-            model=st.session_state["openai_model"],
+            model="gpt-4o-mini",
             messages=[
                 {"role": m["role"], "content": m["content"]}
                 for m in st.session_state.messages
@@ -132,14 +150,19 @@ if prompt := st.chat_input("Say something ..."):
         response = st.write_stream(stream)
     st.session_state.messages.append({"role": "assistant", "content": response})
 
+    # TODO make sure user can not abuse this and let AI write Stats
+    # Prompted the AI to respond with a message containing 'Stats' at the end of the response
     if "Stats" in response:
-        print("response end:::: ", response)
+        print("response end: ", response)
         stats = response.split("number of tries: ")
-        print("stats", stats)
+
+        # double check, because stats should be a list with two elements
         if len(stats) == 2:
-            st.session_state.total_num_tries += int(stats[1].strip(".!?:"))
-            print("total num tries", st.session_state.total_num_tries)
+            num_tries = int(stats[1].strip(".!?:"))
+            st.session_state.total_num_tries += num_tries
+            # print("total num tries", st.session_state.total_num_tries)
+            st.session_state.tries_per_riddle.append(num_tries)
+            # print("tries per riddle", st.session_state.tries_per_riddle)
 
+        # if the user guessed the riddle correctly, increment the number of riddles solved
         st.session_state.riddles_solved += 1
-
-
