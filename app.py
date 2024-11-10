@@ -2,9 +2,9 @@ from random import randint
 import streamlit as st
 from openai import OpenAI
 
-# TODO Can interact with a before new riddle is started, thus not system prompt + remove input if game ends
 # TODO If stats page loaded first, session state is not loaded, so error
 # TODO add lives? max tries?
+# TODO put riddles in extra file?
 
 # Setup part
 
@@ -32,6 +32,9 @@ if "riddles_solved" not in st.session_state:
 # saves the number of tries per riddle in a list
 if "tries_per_riddle" not in st.session_state:
     st.session_state.tries_per_riddle = []
+
+if "running" not in st.session_state:
+    st.session_state.running = False
 
 # list of riddles to choose from, contains riddles of different difficulty with answers
 if "riddles" not in st.session_state:
@@ -77,22 +80,22 @@ if "riddles" not in st.session_state:
 
 
 def restart():
-    random_number = randint(0, 9)
-    print("random number", random_number, add_selectbox)
-    # choose a riddle from the list of riddles, based on the difficulty level and the random number
-    riddle = st.session_state.riddles[add_selectbox][random_number]
+    # increment games played every timeme a new riddle is started
+    st.session_state.games_played += 1
 
+    # choose a riddle from the list of riddles, based on the difficulty level and the random number
+    random_number = randint(0, 9)
+    # print("random number", random_number, add_selectbox)
+    riddle = st.session_state.riddles[add_selectbox][random_number]
     # system prompt to be sent to the AI, to tell it what to do
     system_prompt = {"role": "system", "content": f"You are a master of riddles. Ask the user the following riddle. The riddle: {riddle["riddle"]}, "
                                                   f"The answer: {riddle["answer"]}. Do not repeat the riddleThe user has to guess the answer. If the"
                                                   f" user guesses the riddle correctly, respond with message containing 'congratiolations'. The message"
                                                   f" correctly, respond with message containing 'Congratulations'. The message should also contain a"
                                                   f"section that start with 'Stats:' then 'number of tries: <num>'."}
-
     # add the system prompt to the list of messages, so it is sent to the AI
     st.session_state.messages = [system_prompt]
 
-    # TODO does this work?
     # Get initial response
     # noinspection PyTypeChecker
     response = client.chat.completions.create(
@@ -107,8 +110,7 @@ def restart():
     response_message = response.choices[0].message.content
     st.session_state.messages.append({"role": "assistant", "content": response_message})
 
-    # increment games played every timeme a new riddle is started
-    st.session_state.games_played += 1
+    st.session_state.running = True
 
 
 # Ui part
@@ -130,39 +132,44 @@ for message in st.session_state.messages[1:]:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Display a chat input widget inline.
-if prompt := st.chat_input("Make a guess ..."):
-    with st.chat_message("user"):
-        st.markdown(prompt)
-    st.session_state.messages.append({"role": "user", "content": prompt})
+# If game is running, display a chat input widget inline.
+if st.session_state.running:
+    if prompt := st.chat_input("Make a guess ..."):
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # send response to assistant and stream the incoming response to the user
-    with st.chat_message("assistant"):
-        # noinspection PyTypeChecker
-        stream = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
-            stream=True,
-        )
-        response = st.write_stream(stream)
-    st.session_state.messages.append({"role": "assistant", "content": response})
+        # send response to assistant and stream the incoming response to the user
+        with st.chat_message("assistant"):
+            # noinspection PyTypeChecker
+            stream = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": m["role"], "content": m["content"]}
+                    for m in st.session_state.messages
+                ],
+                stream=True,
+            )
+            response = st.write_stream(stream)
+        st.session_state.messages.append({"role": "assistant", "content": response})
 
-    # TODO make sure user can not abuse this and let AI write Stats
-    # Prompted the AI to respond with a message containing 'Stats' at the end of the response
-    if "Stats" in response:
-        print("response end: ", response)
-        stats = response.split("number of tries: ")
+        # TODO make sure user can not abuse this and let AI write Stats
+        # Prompted the AI to respond with a message containing 'Stats' at the end of the response
+        if "Stats" in response:
+            print("response end: ", response)
+            stats = response.split("number of tries: ")
 
-        # double check, because stats should be a list with two elements
-        if len(stats) == 2:
-            num_tries = int(stats[1].strip(".!?:"))
-            st.session_state.total_num_tries += num_tries
-            # print("total num tries", st.session_state.total_num_tries)
-            st.session_state.tries_per_riddle.append(num_tries)
-            # print("tries per riddle", st.session_state.tries_per_riddle)
+            # double check, because stats should be a list with two elements
+            if len(stats) == 2:
+                num_tries = int(stats[1].strip(".!?:"))
+                st.session_state.total_num_tries += num_tries
+                # print("total num tries", st.session_state.total_num_tries)
+                st.session_state.tries_per_riddle.append(num_tries)
+                # print("tries per riddle", st.session_state.tries_per_riddle)
 
-        # if the user guessed the riddle correctly, increment the number of riddles solved
-        st.session_state.riddles_solved += 1
+            # if the user guessed the riddle correctly, increment the number of riddles solved
+            st.session_state.riddles_solved += 1
+
+            # Set running to False to hide the input widget and force a reload of the page
+            st.session_state.running = False
+            st.rerun()
