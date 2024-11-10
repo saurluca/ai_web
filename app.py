@@ -2,6 +2,7 @@ from random import randint
 import streamlit as st
 from openai import OpenAI
 
+# TODO Can interact with a before new riddle is started, thus not sytem prompt
 
 # Setup part
 
@@ -17,11 +18,14 @@ if "openai_model" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-if "num_tries" not in st.session_state:
-    st.session_state.num_tries = 0
-    
-if "solved" not in st.session_state:
-    st.session_state.solved = False
+if "total_num_tries" not in st.session_state:
+    st.session_state.total_num_tries = 0
+
+if "games_played" not in st.session_state:
+    st.session_state.games_played = 0
+
+if "riddles_solved" not in st.session_state:
+    st.session_state.riddles_solved = 0
 
 if "riddles" not in st.session_state:
     st.session_state.riddles = {
@@ -54,34 +58,28 @@ if "riddles" not in st.session_state:
             {"riddle": "I am not alive, but I can grow. I don’t have lungs, but I need air. I don’t have a mouth, but water kills me. What am I?", "answer": "Fire"},
             {"riddle": "The person who makes it doesn’t need it. The person who buys it doesn’t want it. The person who uses it doesn’t know it. "
                        "What is it?", "answer": "A coffin"},
-            {"riddle": "What has keys but can’t open locks?", "answer": "A piano"},
+            {"riddle": "Have keys but open no locks. You can enter but not leave. I have space but no rooms.", "answer": "A keyboard"},
             {"riddle": "Forward, I am heavy. Backward, I am not. What am I?", "answer": "A ton"},
             {"riddle": "I have branches, but no fruit, trunk, or leaves. What am I?", "answer": "A bank"},
             {"riddle": "I am a word of letters three, add two and fewer there will be. What am I?", "answer": "Few"},
             {"riddle": "The more you take, the more you leave behind. What am I?", "answer": "Footsteps"},
             {"riddle": "What comes at night without being called, and is lost in the day without being stolen?", "answer": "Stars"},
-            {"riddle": "What has no beginning, middle, or end?", "answer": "A circle"}
+            {"riddle": "What has no beginning, or end?", "answer": "A circle"}
         ]
     }
-
-if "selected_riddle" not in st.session_state:
-    st.session_state.selected_riddle = ""
 
 
 def restart():
     print("restart")
     st.session_state.solved = False
-    st.session_state.num_tries = 0
-    print("select_box", add_selectbox)
     random_number = randint(0, 9)
-    print("random number", random_number)
+    print("random number", random_number, add_selectbox)
     riddle = st.session_state.riddles[add_selectbox][random_number]
-    st.session_state.selected_riddle = riddle
 
     system_prompt = {"role": "system", "content": f"You are a master of riddles. Ask the user the following riddle. The riddle: {riddle["riddle"]}, "
                                                   f"The answer: {riddle["answer"]}. Do not repeat the riddleThe user has to guess the answer. If the"
                                                   f" user guesses the riddle correctly, respond with message containing 'congratiolations'. The message"
-                                                  f" correctly, respond with message containing 'congratiolations'. The message should also contain a"
+                                                  f" correctly, respond with message containing 'Congratulations'. The message should also contain a"
                                                   f"section that start with 'Stats:' then 'number of tries: <num>'."}
 
     st.session_state.messages = [system_prompt]
@@ -95,14 +93,13 @@ def restart():
         ],
         stream=False,
     )
-    print(response.choices[0].message.content)
     response_message = response.choices[0].message.content
     st.session_state.messages.append({"role": "assistant", "content": response_message})
+    st.session_state.games_played += 1
 
 
 # Ui part
 
-st.sidebar.title("Navigation")
 st.title("The Riddle game")
 
 add_selectbox = st.selectbox(
@@ -134,3 +131,15 @@ if prompt := st.chat_input("Say something ..."):
         )
         response = st.write_stream(stream)
     st.session_state.messages.append({"role": "assistant", "content": response})
+
+    if "Stats" in response:
+        print("response end:::: ", response)
+        stats = response.split("number of tries: ")
+        print("stats", stats)
+        if len(stats) == 2:
+            st.session_state.total_num_tries += int(stats[1].strip(".!?:"))
+            print("total num tries", st.session_state.total_num_tries)
+
+        st.session_state.riddles_solved += 1
+
+
