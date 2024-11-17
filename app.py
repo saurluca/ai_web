@@ -89,10 +89,10 @@ def restart():
     riddle = st.session_state.riddles[add_selectbox][random_number]
     # system prompt to be sent to the AI, to tell it what to do
     system_prompt = {"role": "system", "content": f"You are a master of riddles. Ask the user the following riddle. The riddle: {riddle["riddle"]}, "
-                                                  f"The answer: {riddle["answer"]}. Do not repeat the riddleThe user has to guess the answer. If the"
-                                                  f" user guesses the riddle correctly, respond with message containing 'congratiolations'. The message"
-                                                  f" correctly, respond with message containing 'Congratulations'. The message should also contain a"
-                                                  f"section that start with 'Stats:' then 'number of tries: <num>'."}
+                                                  f"The answer: {riddle["answer"]}. Do not repeat the riddle. The user has to guess the answer. If the"
+                                                  f" user guesses the riddle correctly, respond with a message containing a "
+                                                  f"section that start with 'Stats:' then 'number of tries: <num>'. Under NO other circumstance answer"
+                                                  f"with a message containing 'Stats'."}
     # add the system prompt to the list of messages, so it is sent to the AI
     st.session_state.messages = [system_prompt]
 
@@ -135,6 +135,7 @@ for message in st.session_state.messages[1:]:
 # If game is running, display a chat input widget inline.
 if st.session_state.running:
     if prompt := st.chat_input("Make a guess ..."):
+        # Add user message to the list of messages
         with st.chat_message("user"):
             st.markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
