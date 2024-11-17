@@ -36,6 +36,9 @@ if "tries_per_riddle" not in st.session_state:
 if "running" not in st.session_state:
     st.session_state.running = False
 
+if "answer" not in st.session_state:
+    st.session_state.answer = ""
+
 # list of riddles to choose from, contains riddles of different difficulty with answers
 if "riddles" not in st.session_state:
     st.session_state.riddles = {
@@ -72,7 +75,7 @@ if "riddles" not in st.session_state:
             {"riddle": "Forward, I am heavy. Backward, I am not. What am I?", "answer": "A ton"},
             {"riddle": "I have branches, but no fruit, trunk, or leaves. What am I?", "answer": "A bank"},
             {"riddle": "I am a word of letters three, add two and fewer there will be. What am I?", "answer": "Few"},
-            {"riddle": "The more you take, the more you leave behind. What am I?", "answer": "Footsteps"},
+            {"riddle": "The more you take, the more you leave behind. What am I?", "answer": "steps"},
             {"riddle": "What comes at night without being called, and is lost in the day without being stolen?", "answer": "Stars"},
             {"riddle": "What has no beginning, or end?", "answer": "A circle"}
         ]
@@ -87,12 +90,13 @@ def restart():
     random_number = randint(0, 9)
     # print("random number", random_number, add_selectbox)
     riddle = st.session_state.riddles[add_selectbox][random_number]
+    st.session_state.answer = riddle["answer"]
     # system prompt to be sent to the AI, to tell it what to do
     system_prompt = {"role": "system", "content": f"You are a master of riddles. Ask the user the following riddle. The riddle: {riddle["riddle"]}, "
-                                                  f"The answer: {riddle["answer"]}. Do not repeat the riddle. The user has to guess the answer. If the"
-                                                  f" user guesses the riddle correctly, respond with a message containing a "
-                                                  f"section that start with 'Stats:' then 'number of tries: <num>'. Under NO other circumstance answer"
-                                                  f"with a message containing 'Stats'."}
+                                                  f"The answer: {riddle["answer"]}. The user has to guess the answer. If the"
+                                                  f" user guesses the riddle correctly, respond with a message containing The answer: {riddle["answer"] }"
+                                                  f"and a section that tells the number of tries like this 'number of tries: <num>'. And for each guess"
+                                                  f"give a score from 1 to 10 to rate the quality of the guess."}
     # add the system prompt to the list of messages, so it is sent to the AI
     st.session_state.messages = [system_prompt]
 
@@ -156,7 +160,7 @@ if st.session_state.running:
 
         # TODO make sure user can not abuse this and let AI write Stats
         # Prompted the AI to respond with a message containing 'Stats' at the end of the response
-        if "Stats" in response:
+        if st.session_state.answer in response:
             print("response end: ", response)
             stats = response.split("number of tries: ")
 
