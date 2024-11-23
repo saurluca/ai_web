@@ -1,3 +1,4 @@
 venv/
 text/
 .streamlit/
+__pychache__/
