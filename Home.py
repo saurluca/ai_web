@@ -4,7 +4,6 @@ from utils.state import initialize_session_state
 st.set_page_config(
     page_title="Riddle Game",
     page_icon="🎮",
-    initial_sidebar_state="collapsed"
 )
 
 initialize_session_state()
@@ -24,5 +23,5 @@ st.markdown("""
 - Performance tracking
 - Quality scoring for guesses
 
-Good luck! 🍀
+Good luck! :)
 """)
