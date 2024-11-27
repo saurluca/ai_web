@@ -69,7 +69,7 @@ def restart():
         return
 
 
-st.title("Play the Riddle Game 🎯")
+st.title("Play the Riddle Game 🎲")
 
 add_selectbox = st.selectbox(
     "Choose difficulty level",
@@ -114,9 +114,13 @@ if st.session_state.running:
             if st.session_state.answer in response:
                 stats = response.split("number of tries: ")
                 if len(stats) == 2:
-                    num_tries = int(stats[1].strip(".!?:"))
-                    st.session_state.total_num_tries += num_tries
-                    st.session_state.tries_per_riddle.append(num_tries)
+                    try:
+                        # Extract only the number before any extra text
+                        num_tries = int(stats[1].split()[0].strip(".!?:"))
+                        st.session_state.total_num_tries += num_tries
+                        st.session_state.tries_per_riddle.append(num_tries)
+                    except ValueError as e:
+                        st.error(f"Error parsing number of tries: {str(e)}")
                 st.session_state.riddles_solved += 1
                 st.session_state.running = False
                 st.rerun()
