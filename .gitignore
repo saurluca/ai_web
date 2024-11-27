@@ -2,3 +2,4 @@ venv/
 text/
 .streamlit/
 __pychache__/
+.idea/
