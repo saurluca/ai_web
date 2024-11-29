@@ -21,9 +21,6 @@ def restart():
     try:
         st.session_state.games_played += 1
         
-        # Get the current difficulty level
-        difficulty = st.session_state.get('difficulty', 'Easy')
-        
         # Get the number of riddles for the current difficulty
         num_riddles = len(RIDDLES[difficulty])
         if num_riddles == 0:
@@ -71,7 +68,7 @@ def restart():
 
 st.title("Play the Riddle Game 🎲")
 
-add_selectbox = st.selectbox(
+difficulty = st.selectbox(
     "Choose difficulty level",
     ('Easy', 'Medium', 'Hard')
 )
