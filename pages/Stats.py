@@ -16,14 +16,14 @@ with col1:
 
 with col2:
     avg_tries = get_average_tries()
-    st.metric("Average Tries per Game", f"{avg_tries:.1f}")
+    st.metric("Average Tries per Riddle", f"{avg_tries:.1f}")
 
 with col3:
     success_rate = (st.session_state.riddles_solved / st.session_state.games_played * 100) if st.session_state.games_played > 0 else 0
     st.metric("Success Rate", f"{success_rate:.1f}%")
 
 # Guesses per game chart
-st.subheader("Guesses per Game")
+st.subheader("Guesses per Riddle")
 if st.session_state.tries_per_riddle:
     st.bar_chart(st.session_state.tries_per_riddle, x_label="Riddle number", y_label="Number of tries")
 else:
@@ -45,16 +45,16 @@ if st.session_state.guess_qualities:
     st.plotly_chart(fig_quality)
     
     # Quality distribution
-    quality_dist = pd.DataFrame(st.session_state.guess_qualities).value_counts().sort_index()
     quality_dist = pd.DataFrame({
-        'Quality': quality_dist.index,
-        'Count': quality_dist.values
+        'Quality': list(range(1, 11)),  # Explicitly create bins from 1-10
+        'Count': [st.session_state.guess_qualities.count(i) for i in range(1, 11)]  # Count occurrences of each score
     })
     fig_dist = px.bar(quality_dist, 
                      x='Quality', 
                      y='Count',
                      title='Distribution of Guess Qualities',
                      labels={'Count': 'Number of Guesses', 'Quality': 'Quality Score'})
+    fig_dist.update_xaxes(tickmode='linear')
     st.plotly_chart(fig_dist)
 else:
     st.info("Make some guesses to see quality analysis!")
