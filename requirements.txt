@@ -3,4 +3,3 @@ numpy
 openai
 pandas
 plotly
-altair==4.2.2

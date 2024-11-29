@@ -25,8 +25,13 @@ with col3:
 # Guesses per game chart
 st.subheader("Guesses per Riddle")
 if st.session_state.tries_per_riddle:
-    # Shows how many attempts were needed for each riddle 
-    st.bar_chart(st.session_state.tries_per_riddle, x_label="Riddle number", y_label="Number of tries")
+    df_tries = pd.DataFrame({
+        "Riddle Number": range(1, len(st.session_state.tries_per_riddle) + 1),
+        "Number of Tries": st.session_state.tries_per_riddle
+    })
+    fig_tries = px.bar(df_tries, x="Riddle Number", y="Number of Tries",
+                       title="Guesses per Riddle")
+    st.plotly_chart(fig_tries)
 else:
     st.info("Play some games to see statistics!")
 
