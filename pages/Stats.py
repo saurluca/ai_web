@@ -25,6 +25,7 @@ with col3:
 # Guesses per game chart
 st.subheader("Guesses per Riddle")
 if st.session_state.tries_per_riddle:
+    # Shows how many attempts were needed for each riddle 
     st.bar_chart(st.session_state.tries_per_riddle, x_label="Riddle number", y_label="Number of tries")
 else:
     st.info("Play some games to see statistics!")
@@ -35,6 +36,7 @@ if st.session_state.guess_qualities:
     avg_quality = get_average_guess_quality()
     st.metric("Average Guess Quality", f"{avg_quality:.1f}/10")
     
+    # Line chart showing if guesses are improving over time
     df_quality = pd.DataFrame({
         'Guess': range(1, len(st.session_state.guess_qualities) + 1),
         'Quality': st.session_state.guess_qualities
@@ -46,8 +48,8 @@ if st.session_state.guess_qualities:
     
     # Quality distribution
     quality_dist = pd.DataFrame({
-        'Quality': list(range(1, 11)),  # Explicitly create bins from 1-10
-        'Count': [st.session_state.guess_qualities.count(i) for i in range(1, 11)]  # Count occurrences of each score
+        'Quality': list(range(1, 11)),
+        'Count': [st.session_state.guess_qualities.count(i) for i in range(1, 11)]
     })
     fig_dist = px.bar(quality_dist, 
                      x='Quality', 

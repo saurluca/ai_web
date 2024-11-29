@@ -1,5 +1,6 @@
 import streamlit as st
 
+
 def initialize_session_state():
     """Initialize all session state variables"""
     if "messages" not in st.session_state:
@@ -26,11 +27,13 @@ def initialize_session_state():
     if "guess_qualities" not in st.session_state:
         st.session_state.guess_qualities = []  # Store quality scores for each guess
 
+
 def get_average_tries():
     """Calculate average tries per game"""
     if st.session_state.games_played == 0:
         return 0
     return st.session_state.total_num_tries / st.session_state.games_played
+
 
 def get_average_guess_quality():
     """Calculate average guess quality"""

@@ -16,6 +16,7 @@ except Exception as e:
     st.error("Error initializing OpenAI client. Please check your API key.")
     st.stop()
 
+
 def restart():
     """Start a new game with a new riddle"""
     try:
@@ -68,6 +69,7 @@ def restart():
 
 st.title("Play the Riddle Game 🎲")
 
+# selectbox to select difficulty
 difficulty = st.selectbox(
     "Choose difficulty level",
     ('Easy', 'Medium', 'Hard')
@@ -89,6 +91,7 @@ if st.session_state.running:
                 st.markdown(prompt)
             st.session_state.messages.append({"role": "user", "content": prompt})
 
+            # get AI response
             with st.chat_message("assistant"):
                 stream = client.chat.completions.create(
                     model=model,
