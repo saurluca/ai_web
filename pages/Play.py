@@ -109,7 +109,9 @@ if st.session_state.running:
 
             # Handle correct answer
             if st.session_state.answer in response:
-                stats = response.split("number of tries: ")
+                # Extract number of tries, convert to lowercase to avoid case sensitivity
+                response_lower = response.lower()
+                stats = response_lower.split("number of tries: ")
                 if len(stats) == 2:
                     try:
                         # Extract only the number before any extra text
